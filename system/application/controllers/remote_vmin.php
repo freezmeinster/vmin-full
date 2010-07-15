@@ -65,6 +65,35 @@ class Remote_vmin extends Controller {
         $this->gui_vmin->send_user_message($user,"Your VPS with name $name has been Started");
         }
         
+        function restart_vps($name){
+        $this->mod_vmin->stop_vmin($name);
+        $this->mod_vmin->start_vmin($name);
+	$this->db->reconnect();
+        $this->db->query("update vps set status='Running' where vps_name like '$name' ");
+        $this->db->reconnect();
+        $data = $this->db->query("select user from vps where vps_name like '$name'");
+        $raw = $data->row_array();
+        $user = $raw['user'];
+        $this->gui_vmin->send_user_message($user,"Your VPS with name $name has been restarted");
+        }
+        
+        function template_vps($name){
+        $server = $this->input->post('server');
+        $wew = $this->mod_vmin->template_vmin($name,$server);
+        echo $wew;
+        }
+        
+        function shutdown_vps($name){
+        $this->mod_vmin->stop_vmin($name);
+	$this->db->reconnect();
+        $this->db->query("update vps set status='Stoped' where vps_name like '$name' ");
+        $this->db->reconnect();
+        $data = $this->db->query("select user from vps where vps_name like '$name'");
+        $raw = $data->row_array();
+        $user = $raw['user'];
+        $this->gui_vmin->send_user_message($user,"Your VPS with name $name has been Stoped");
+        }
+        
         function list_vps($user){
         $this->db->reconnect();
         $uvpanel = $this->config->item('uvpanel_url');
@@ -140,7 +169,7 @@ class Remote_vmin extends Controller {
          $http = shell_exec("sudo /usr/local/sbin/vserver $vps exec socklist | grep 80 | head -n 1 | awk '{print $2}'");
          
          if ( $http == 80 ){
-           $disk = "<a href=\"http://$ip\">$ip</a>";
+           $disk = "<a href=\"http://$ip\" target=\"none\">$ip</a>";
          }else $disk = $ip;
         
          echo $disk;
@@ -234,6 +263,17 @@ class Remote_vmin extends Controller {
         $wew  = shell_exec("sudo /usr/local/sbin/vserver-stat | grep $context | awk '{print $8}'");
         $name = trim($wew);
         $this->mod_vmin->remote_change_pass($name,$pass);
+        }
+        
+        function change_vps_mem(){
+        $context = $this->input->post('context');
+        $mem = $this->input->post('mem');
+        $vhome = $this->config->item('vmin_home');
+        $home = trim($vhome);
+        $wew  = shell_exec("sudo /usr/local/sbin/vserver-stat | grep $context | awk '{print $8}'");
+        $name = trim($wew);
+        $hah = $this->mod_vmin->remote_change_mem($name,$mem);
+        echo $hah;
         }
 }
 ?>

@@ -25,6 +25,22 @@ class Mod_vmin extends Model {
     $beb  = shell_exec("sudo /bin/chroot $home/$name /usr/sbin/usermod -p \"$lah\" root");
     }
     
+    function remote_change_mem($name,$mem){
+    $vdir = $this->config->item('vmin_dir');
+    $vhome = $this->config->item('vmin_home');
+    $home = trim($vhome);
+    $old_mem = shell_exec("cat /usr/local/etc/vservers/$name/rlimits/rss.hard");
+    $new_mem = $mem*250;
+    if ($old_mem == $new_mem){
+    return 0;
+    }else if($old_mem != $new_mem){
+    shell_exec("sudo /usr/local/etc/script/edit_vps 1 $new_mem $name");
+    $this->db->reconnect();
+    $this->db->query("update vps set memory = '$mem' where vps_name like $mem");
+    return 1;
+    }
+    }
+    
     function edit_vmin($name,$mem,$old_mem,$ip,$old_ip,$pass){
     $vdir = $this->config->item('vmin_dir');
     $vhome = $this->config->item('vmin_home');
@@ -97,6 +113,21 @@ class Mod_vmin extends Model {
         echo "</tr>";
         $i++;
         }
+       }
+       function template_vmin($name,$server){
+       $vdir = $this->config->item('vmin_dir');
+       $vopt = $this->config->item('vmin_opt');
+       $vscript = $this->config->item('vmin_opt_script');
+       $vhome = $this->config->item('vmin_home');
+       $script = trim($vscript);
+       $opt = trim($vopt);
+       $home = trim($vhome);
+       $ip = shell_exec("cat /usr/local/etc/vservers/$name/interfaces/0/ip");
+       if ($server == "apache"){
+       shell_exec("$script/apache $home/$name $opt");
+       }else  if ($server == "proftpd"){
+       shell_exec("$script/proftpd $home/$name $opt");
+       }
        }
 }
 ?>
